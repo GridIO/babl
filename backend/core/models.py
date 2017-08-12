@@ -23,6 +23,17 @@ class IntegerRangeField(models.IntegerField):
         return super(IntegerRangeField, self).formfield(**defaults)
 
 
+class Language(models.Model):
+    lang_code = models.CharField(max_length=2)
+    lang_name = models.CharField(max_length=50)
+
+    class Meta:
+        verbose_name = _('Language')
+        verbose_name_plural = _('Languages')
+
+    def __str__(self):
+        return self.lang_name
+
 # CUSTOM USER CLASS AND MANAGER
 
 class UserManager(BaseUserManager):
@@ -110,7 +121,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(_('Staff'), default=False)
     is_superuser = models.BooleanField(_('Superuser'), default=False)
     # avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)  TODO
-    # language = models.ForeignKey(Language, default=1)
+    language = models.ForeignKey(Language, default=1)
     about_me = models.CharField(max_length=255, null=True, blank=True)
     age = IntegerRangeField(min_value=18, max_value=100, null=True, blank=True)
     height = IntegerRangeField(min_value=122, max_value=241,
