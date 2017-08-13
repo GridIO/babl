@@ -25,7 +25,7 @@ class IntegerRangeField(models.IntegerField):
 
 class Language(models.Model):
     lang_code = models.CharField(max_length=2)
-    lang_name = models.CharField(max_length=50)
+    lang_name = models.CharField(max_length=100)
 
     class Meta:
         verbose_name = _('Language')

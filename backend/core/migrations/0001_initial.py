@@ -52,7 +52,7 @@ class Migration(migrations.Migration):
             name='Language',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('lang_code', models.CharField(max_length=2)),
+                ('lang_code', models.CharField(max_length=5)),
                 ('lang_name', models.CharField(max_length=50)),
             ],
             options={
