@@ -1,5 +1,5 @@
 from django.contrib.gis.db import models
-from core.models import User
+from django.conf import settings
 
 from django.utils.translation import ugettext_lazy as _
 
@@ -10,7 +10,7 @@ from operator import itemgetter
 
 
 class Location(models.Model):
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL)
     point = models.PointField()
     timestamp = models.DateTimeField(auto_now_add=True)
 

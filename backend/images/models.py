@@ -1,5 +1,5 @@
 from django.db import models
-from core.models import User
+from django.conf import settings
 import os
 from django.db.models import Max
 
@@ -20,7 +20,7 @@ def user_directory_path_profile(instance, filename):
 
 
 class Image(models.Model):
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL)
     image = models.ImageField(upload_to=user_directory_path_profile,
                               storage=OverwriteStorage())
     order = models.IntegerField()
