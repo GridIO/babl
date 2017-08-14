@@ -63,13 +63,14 @@ class UserAdmin(BaseUserAdmin):
     # that reference specific fields on auth.User.
     list_display = ('email', 'is_staff', 'is_superuser', 'is_active',)
     list_filter = ('is_staff', 'is_superuser', 'is_active', 'ethnicity',
-                   'body_type', 'position', 'rel_status', 'hiv_status')
+                   'body_type', 'position', 'rel_status', 'hiv_status',)
     fieldsets = (
         (None, {'fields': ('email', 'display_name', 'password', 'language',)}),
         ('Personal info', {'fields':
                            ('about_me', 'age', 'height', 'weight',
                             'ethnicity', 'body_type', 'position',
                             'rel_status', 'hiv_status', 'hiv_test_date',)}),
+        ('Blocked users', {'fields': ('blocked_users',)}),
         ('Permissions', {'fields': ('is_staff', 'is_superuser')}),
     )
     # add_fieldsets is not a standard ModelAdmin attribute. UserAdmin

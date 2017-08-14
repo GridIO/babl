@@ -130,26 +130,28 @@ class User(AbstractBaseUser, PermissionsMixin):
                                null=True, blank=True)
     ethnicity = models.CharField(
         max_length=2, choices=ETHNICITY_CHOICES, null=True, blank=True,
-        verbose_name='Ethnicity'
+        verbose_name=_('Ethnicity')
     )
     body_type = models.CharField(
         max_length=2, choices=BODY_TYPE_CHOICES, null=True, blank=True,
-        verbose_name='Body Type'
+        verbose_name=_('Body Type')
     )
     position = models.CharField(
         max_length=2, choices=POSITION_CHOICES, null=True, blank=True,
-        verbose_name='Position'
+        verbose_name=_('Position')
     )
     rel_status = models.CharField(
         max_length=2, choices=REL_STATUS_CHOICES, null=True, blank=True,
-        verbose_name='Relationship Status'
+        verbose_name=_('Relationship Status')
     )
     hiv_status = models.CharField(
         max_length=2, choices=HIV_STATUS_CHOICES, null=True, blank=True,
-        verbose_name='HIV Status'
+        verbose_name=_('HIV Status')
     )
     hiv_test_date = models.DateField(null=True, blank=True,
-                                     verbose_name='HIV Test Date')
+                                     verbose_name=_('HIV Test Date'))
+    blocked_users = models.ManyToManyField(
+        "self", blank=True, verbose_name=_('Blocked Users'))
 
     objects = UserManager()
 
@@ -161,19 +163,25 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = _('Users')
 
     def get_full_name(self):
-        '''
+        """
         Returns the first_name plus the last_name, with a space in between.
-        '''
+        """
         return self.email
 
     def get_short_name(self):
-        '''
+        """
         Returns the short name for the user.
-        '''
+        """
         return self.display_name
 
     def email_user(self, subject, message, from_email=None, **kwargs):
-        '''
+        """
         Sends an email to this User.
-        '''
+        """
         send_mail(subject, message, from_email, [self.email], **kwargs)
+
+    def block_user(self, user):
+        """
+        Blocks other User.
+        """
+        self.blocked_users.add(user)

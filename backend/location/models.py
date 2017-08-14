@@ -37,6 +37,7 @@ class Location(models.Model):
         """
         obj = Location.objects \
             .exclude(user=self.user) \
+            .exclude(user__in=self.user.blocked_users.all()) \
             .filter(point__distance_lte=(self.point, D(km=20))) \
             .order_by('user', '-timestamp').distinct('user')
 

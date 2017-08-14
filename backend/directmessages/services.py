@@ -9,7 +9,7 @@ from django.db.models import Q
 
 class MessagingService(object):
     """
-    A object to manage all messages and conversations
+    An object to manage all messages and conversations
     """
 
     # Message creation
@@ -25,11 +25,17 @@ class MessagingService(object):
 
         if sender == recipient:
             raise ValidationError("You can't send messages to yourself.")
+        elif sender in recipient.blocked_users.all():
+            raise PermissionError("You can't send messages to blocked users.")
 
-        message = Message(sender=sender, recipient=recipient, content=str(message))
+        message = Message(
+            sender=sender, recipient=recipient, content=str(message)
+        )
         message.save()
 
-        message_sent.send(sender=message, from_user=message.sender, to=message.recipient)
+        message_sent.send(
+            sender=message, from_user=message.sender, to=message.recipient
+        )
 
         # The second value acts as a status value
         return message, 200
@@ -41,7 +47,7 @@ class MessagingService(object):
         :param user: user
         :return: messages
         """
-        return Message.objects.all().filter(recipient=user, read_at=None)
+        return Message.objects.filter(recipient=user, read_at=None)
 
     def read_message(self, message_id):
         """
@@ -75,15 +81,20 @@ class MessagingService(object):
         """
         Lists all conversation-partners for a specific user
         :param user: User
-        :return: Conversation list
+        :return: User list
         """
-        all_conversations = Message.objects.all().filter(Q(sender=user) | Q(recipient=user))
+        all_conversations = Message.objects.filter(
+            Q(sender=user) | Q(recipient=user)
+        )
 
         contacts = []
         for conversation in all_conversations:
-            if conversation.sender != user:
+            if (conversation.sender != user and
+                    conversation.sender not in user.blocked_users.all()):
                 contacts.append(conversation.sender)
-            elif conversation.recipient != user:
+
+            elif (conversation.recipient != user and
+                    conversation.recipient not in user.blocked_users.all()):
                 contacts.append(conversation.recipient)
 
         # To abolish duplicates
@@ -100,13 +111,17 @@ class MessagingService(object):
         """
         users = [user1, user2]
 
+        if (user2 in user1.blocked_users.all() or
+                user1 in user2.blocked_users.all()):
+            raise PermissionError("You can't send messages to blocked users.")
+
         # Newest message first if it's reversed (index 0)
         if reversed:
             order = '-pk'
         else:
             order = 'pk'
 
-        conversation = Message.objects.all().filter(sender__in=users, recipient__in=users).order_by(order)
+        conversation = Message.objects.filter(sender__in=users, recipient__in=users).order_by(order)
 
         if limit:
             # Limit number of messages to the x newest
