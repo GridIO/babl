@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'images',
     'django.contrib.gis',
     'location',
+    'directmessages',
 ]
 
 MIDDLEWARE = [
@@ -134,3 +135,5 @@ MEDIA_ROOT = ''
 # User model changes
 
 AUTH_USER_MODEL = 'core.User'
+
+# Google Cloud credentials
