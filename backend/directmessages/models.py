@@ -99,7 +99,10 @@ class Message(models.Model):
             self.sent_at = timezone.now()
 
         # run translation
-        if self.content_translated is None or self.content_translated == '':
+        if (self.sender.language != self.recipient.language and
+                (self.content_translated is None or
+                 self.content_translated == '')):
+
             self.translate()
 
         super(Message, self).save(**kwargs)
