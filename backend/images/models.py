@@ -23,7 +23,6 @@ class Image(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL)
     image = models.ImageField(upload_to=user_directory_path_profile,
                               storage=OverwriteStorage())
-    order = models.IntegerField()
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
     def _save(self, *args, **kwargs):
@@ -51,13 +50,16 @@ class Image(models.Model):
 
 
 class ProfileImage(Image):
+    order = models.IntegerField()
 
     class Meta:
         verbose_name = _('Profile Image')
         verbose_name_plural = _('Profile Images')
 
     def __str__(self):
-        return 'Propic #%s for user: %s' % (self.order, self.user.display_name)
+        return 'Profile image: <Order #%s for user %s>' % (
+            self.order, self.user.display_name
+        )
 
     def save(self, *args, **kwargs):
         # check that user doesn't have 6 profile_images, raise error otherwise
@@ -74,6 +76,24 @@ class ProfileImage(Image):
                 self.order = order_max + 1
 
         self._save(self, *args, **kwargs)
+
+
+class MessageImage(Image):
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL)
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('Message Image')
+        verbose_name_plural = _('Message Images')
+
+    def __str__(self):
+        return 'Message image: <From %s to %s' % (
+            self.user, self.recipient
+        )
+
+    def save(self, *args, **kwargs):
+        self._save(self, *args, **kwargs)
+
 
 
 @receiver(post_delete, sender=Image)
