@@ -6,6 +6,9 @@ from directmessages.serializers import MessageGetSerializer
 from directmessages.serializers import MessagePostSerializer
 from directmessages.serializers import UserSerializer
 
+from core.permissions import IsOwnerOrReadOnly
+from rest_framework.permissions import IsAuthenticated
+
 from directmessages.apps import Inbox
 from django.contrib.auth import get_user_model
 
@@ -17,6 +20,7 @@ class ConversationListView(generics.ListAPIView):
     API endpoint that lets user get list of conversation partners
     """
     serializer_class = UserSerializer
+    permission_classes = (IsAuthenticated, IsOwnerOrReadOnly,)
 
     def get_queryset(self):
         """
