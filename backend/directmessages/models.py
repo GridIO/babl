@@ -106,3 +106,20 @@ class Message(models.Model):
             self.translate()
 
         super(Message, self).save(**kwargs)
+
+
+# class MessageImage(Image):
+#     recipient = models.ForeignKey(settings.AUTH_USER_MODEL)
+#     sent_at = models.DateTimeField(auto_now_add=True)
+#
+#     class Meta:
+#         verbose_name = _('Message Image')
+#         verbose_name_plural = _('Message Images')
+#
+#     def __str__(self):
+#         return 'Message image: <From %s to %s' % (
+#             self.user, self.recipient
+#         )
+#
+#     def save(self, *args, **kwargs):
+#         self._save(self, *args, **kwargs)

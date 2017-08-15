@@ -5,7 +5,7 @@ from core.serializers import SignUpSerializer
 from core.serializers import UserSerializer
 from core.serializers import LanguageSerializer
 
-from core.permissions import IsOwnerOrReadOnly
+from core.permissions import IsSelfOrReadOnly
 from core.permissions import IsAdminOrReadOnly
 from core.permissions import IsCreationOrIsAuthenticated
 from rest_framework.permissions import IsAuthenticated
@@ -18,7 +18,7 @@ class UserViewSet(mixins.RetrieveModelMixin,
     """
     API endpoint that allows users to be viewed or edited
     """
-    permission_classes = (IsOwnerOrReadOnly, IsCreationOrIsAuthenticated,)
+    permission_classes = (IsSelfOrReadOnly, IsCreationOrIsAuthenticated,)
 
     queryset = User.objects.all()
     serializer_class = UserSerializer

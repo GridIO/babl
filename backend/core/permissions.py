@@ -2,7 +2,7 @@ from rest_framework import permissions
 from django.conf import settings
 
 
-class IsOwnerOrReadOnly(permissions.BasePermission):
+class IsSelfOrReadOnly(permissions.BasePermission):
     """
     Object-level permission to only allow owners of an object to edit it.
     Assumes the model instance has an `owner` attribute.
