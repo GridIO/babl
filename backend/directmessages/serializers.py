@@ -5,11 +5,11 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'email', 'display_name', 'about_me', 'age', 'height',
+        fields = ('url', 'email', 'display_name', 'about_me', 'age', 'height',
                   'weight', 'ethnicity', 'body_type', 'position', 'rel_status',
                   'hiv_status', 'hiv_test_date',)
 
