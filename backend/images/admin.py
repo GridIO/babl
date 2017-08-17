@@ -1,5 +1,6 @@
 from django.contrib import admin
 from images.models import ProfileImage
+from images.models import ProfileImageOrder
 
 
 class ProfileImageAdmin(admin.ModelAdmin):
@@ -8,8 +9,13 @@ class ProfileImageAdmin(admin.ModelAdmin):
         model = ProfileImage
         fields = ('user', 'image',)
 
-    def get_readonly_fields(self, request, obj=None):
-        return ('order',)
+
+class ProfileImageOrderAdmin(admin.ModelAdmin):
+
+    class Meta:
+        model = ProfileImageOrder
+        fields = ('order',)
 
 
 admin.site.register(ProfileImage, ProfileImageAdmin)
+admin.site.register(ProfileImageOrder, ProfileImageOrderAdmin)
