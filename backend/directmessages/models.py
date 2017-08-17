@@ -9,6 +9,12 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.staticfiles.templatetags.staticfiles import static
 
+from PIL import Image as Img
+from io import BytesIO
+from django.core.files.uploadedfile import InMemoryUploadedFile
+import uuid
+import os
+
 from core.models import Language
 from google.cloud import translate
 from google.oauth2 import service_account
@@ -17,11 +23,22 @@ from google.oauth2 import service_account
 AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 
 
+def user_directory_path_profile(instance, filename):
+    # file will be uploaded to MEDIA_ROOT/profile_images/user_<id>/<filename>
+    return 'message_images/%s' % filename
+
+
 @python_2_unicode_compatible
 class Message(models.Model):
     """
     A private translated directmessage
     """
+
+    TYPE_CHOICES = (
+        ('txt', 'Text'),
+        ('img', 'Image'),
+    )
+
     sender = models.ForeignKey(
         AUTH_USER_MODEL,
         related_name='sent_dm',
@@ -32,13 +49,27 @@ class Message(models.Model):
         related_name='received_dm',
         verbose_name=_("Recipient")
     )
-    content = models.TextField(_('Content'))
-    content_translated = models.TextField(
-        _('Content (Translated)'),
+    message_type = models.CharField(
+        max_length=3,
+        choices=TYPE_CHOICES
+    )
+    sender_content = models.TextField(
+        verbose_name=_('Content'),
         null=True,
         blank=True
     )
-    source_language = models.ForeignKey(
+    recipient_content = models.TextField(
+        verbose_name=_('Content (Translated)'),
+        null=True,
+        blank=True
+    )
+    image = models.ImageField(
+        verbose_name=_('Image Content'),
+        upload_to=user_directory_path_profile,
+        null=True,
+        blank=True
+    )
+    sender_language = models.ForeignKey(
         Language,
         null=True,
         blank=True,
@@ -52,8 +83,8 @@ class Message(models.Model):
         related_name='recipient_language',
         verbose_name=_('Recipient Language')
     )
-    sent_at = models.DateTimeField(_("sent at"), null=True, blank=True)
-    read_at = models.DateTimeField(_("read at"), null=True, blank=True)
+    sent_at = models.DateTimeField(_("Sent At"), null=True, blank=True)
+    read_at = models.DateTimeField(_("Read At"), null=True, blank=True)
 
     class Meta:
         verbose_name = _('Message')
@@ -67,7 +98,10 @@ class Message(models.Model):
         return True
 
     def __str__(self):
-        return self.content
+        if self.message_type == 'txt':
+            return self.sender_content
+        elif self.message_type == 'img':
+            return self.image
 
     def translate(self):
         """Translate original content to recipient's language"""
@@ -81,45 +115,65 @@ class Message(models.Model):
         client = translate.Client(credentials=credentials)
 
         # do translation
-        self.content_translated = client.translate(
-            self.content,
+        self.recipient_content = client.translate(
+            self.sender_content,
             target_language=self.recipient.language.lang_code,
             source_language=self.sender.language.lang_code
         )['translatedText']
 
         # note the languages assumed in the translation
         self.recipient_language = self.recipient.language
-        self.source_language = self.sender.language
+        self.sender_language = self.sender.language
 
-    def save(self, **kwargs):
+    def clean(self):
         if self.sender == self.recipient:
             raise ValidationError("You can't send messages to yourself")
+
+        # ensure content is uploaded
+        if self.message_type == 'txt' and not self.sender_content:
+            raise ValidationError("You must enter text.")
+
+        if self.message_type == 'img' and not self.image:
+            raise ValidationError("You must upload an image.")
+
+        # prevent content mismatch
+        if self.message_type == 'txt' and self.image:
+            raise ValidationError("You can't upload image to text message.")
+
+        if self.message_type == 'img' and self.sender_content:
+            raise ValidationError("You can't enter text to image message.")
+
+    def save(self, **kwargs):
+        self.full_clean()
 
         if not self.id:
             self.sent_at = timezone.now()
 
         # run translation
-        if (self.sender.language != self.recipient.language and
-                (self.content_translated is None or
-                 self.content_translated == '')):
+        if self.message_type == 'txt':
 
-            self.translate()
+            if self.sender.language != self.recipient.language:
+                self.translate()
+
+            else:
+                self.recipient_translated = self.sender_content
+
+        elif self.message_type == 'img' and self.pk is None:
+            img = Img.open(BytesIO(self.image.read()))
+
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+
+            img.thumbnail(
+                (self.image.width / 1.5, self.image.height / 1.5),
+                Img.ANTIALIAS
+            )
+            output = BytesIO()
+
+            img.save(output, format='JPEG', quality=25)
+            self.image = InMemoryUploadedFile(
+                output, 'ImageField', "%s.jpg" % uuid.uuid4(),
+                'image/jpeg', output.seek(0, os.SEEK_END), None
+            )
 
         super(Message, self).save(**kwargs)
-
-
-# class MessageImage(Image):
-#     recipient = models.ForeignKey(settings.AUTH_USER_MODEL)
-#     sent_at = models.DateTimeField(auto_now_add=True)
-#
-#     class Meta:
-#         verbose_name = _('Message Image')
-#         verbose_name_plural = _('Message Images')
-#
-#     def __str__(self):
-#         return 'Message image: <From %s to %s' % (
-#             self.user, self.recipient
-#         )
-#
-#     def save(self, *args, **kwargs):
-#         self._save(self, *args, **kwargs)

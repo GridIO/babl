@@ -4,6 +4,7 @@
 *.db
 *.sqlite3
 profile_images/
+message_images/
 
 # compiled output
 /dist

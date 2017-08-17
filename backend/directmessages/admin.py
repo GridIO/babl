@@ -4,12 +4,14 @@ from django.contrib import admin
 
 class MessageAdmin(admin.ModelAdmin):
     model = Message
-    list_display = ('sender', 'recipient', 'content', 'content_translated',)
+    list_display = (
+        'sender', 'recipient', 'sender_content', 'recipient_content',
+    )
 
     class Meta:
         fields = (
-            'sender', 'recipient', 'content', 'content_translated',
-            'source_language', 'recipient_language', 'sent_at', 'read_at',
+            'sender', 'recipient', 'sender_content', 'recipient_content',
+            'sender_language', 'recipient_language', 'sent_at', 'read_at',
         )
 
 

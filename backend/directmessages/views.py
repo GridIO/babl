@@ -1,6 +1,7 @@
 from rest_framework import viewsets, mixins, generics
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
+from rest_framework.reverse import reverse
 
 from rest_framework.exceptions import APIException
 from django.core.exceptions import ObjectDoesNotExist
@@ -10,7 +11,7 @@ from directmessages.serializers import MessageGetSerializer
 from directmessages.serializers import MessagePostSerializer
 from directmessages.serializers import UserSerializer
 
-from core.permissions import IsOwnerOrReadOnly
+from directmessages.permissions import IsOwnerOrReadOnly
 from rest_framework.permissions import IsAuthenticated
 
 from directmessages.apps import Inbox
