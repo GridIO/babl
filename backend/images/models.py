@@ -28,16 +28,6 @@ def user_directory_path_profile(instance, filename):
 
 
 class ProfileImage(models.Model):
-
-    ORDER_CHOICES = (
-        (0, 'First image'),
-        (1, 'Second image'),
-        (2, 'Third image'),
-        (3, 'Fourth image'),
-        (4, 'Fifth image'),
-        (5, 'Sixth image'),
-    )
-
     user = models.ForeignKey(settings.AUTH_USER_MODEL)
     image = models.ImageField(upload_to=user_directory_path_profile,
                               storage=OverwriteStorage())
