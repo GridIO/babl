@@ -39,12 +39,17 @@ class LocationViewSet(mixins.ListModelMixin,
             raise LocationUnavailable
 
         nearby = loc.get_near()
+
+        # start pagination
+        page = self.paginate_queryset(nearby)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        # end pagination
+
         serializer = self.get_serializer(nearby, many=True)
 
-        return Response({
-            'count': len(serializer.data),
-            'results': serializer.data
-        })
+        return Response(serializer.data)
 
 
 class LocationUnavailable(APIException):
