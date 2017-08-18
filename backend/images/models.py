@@ -14,8 +14,10 @@ import uuid
 from django.db.models.signals import post_save, post_delete
 from django.dispatch.dispatcher import receiver
 
-from rest_framework.exceptions import APIException
 from django.core.exceptions import ObjectDoesNotExist
+from images.exceptions import TooManyImages
+from images.exceptions import DuplicateImage
+from images.exceptions import ImageNotAvailable
 
 from django.contrib.auth import get_user_model
 
@@ -159,20 +161,3 @@ def profile_image_delete(sender, instance, **kwargs):
     obj = _pio_helper_get(user=instance.user)
     obj.drop(instance.id)
 
-
-class TooManyImages(APIException):
-    status_code = 401
-    default_detail = "You may only have 6 profile pictures at a time."
-    default_code = 'profile_pic_max_exceeded'
-
-
-class DuplicateImage(APIException):
-    status_code = 400
-    default_detail = "You cannot submit the same image twice."
-    default_code = 'duplicate_image'
-
-
-class ImageNotAvailable(APIException):
-    status_code = 400
-    default_detail = "Image being referenced is not available."
-    default_code = 'image_not_available'

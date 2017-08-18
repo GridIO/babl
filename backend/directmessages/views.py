@@ -1,10 +1,9 @@
-from rest_framework import viewsets, mixins, generics
+from rest_framework import viewsets, mixins
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
-from rest_framework.reverse import reverse
 
-from rest_framework.exceptions import APIException
 from django.core.exceptions import ObjectDoesNotExist
+from core.exceptions import UserUnavailable
 
 from directmessages.models import Message
 from directmessages.serializers import MessageGetSerializer
@@ -61,9 +60,3 @@ class ConversationViewSet(mixins.RetrieveModelMixin,
 
         serializer = self.get_serializer(messages, many=True)
         return Response(serializer.data)
-
-
-class UserUnavailable(APIException):
-    status_code = 404
-    default_detail = 'User not found. Please provide a valid id.'
-    default_code = 'user_not_found'

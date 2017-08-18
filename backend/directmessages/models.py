@@ -24,8 +24,8 @@ AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 
 
 def user_directory_path_profile(instance, filename):
-    # file will be uploaded to MEDIA_ROOT/profile_images/user_<id>/<filename>
-    return 'message_images/%s' % filename
+    # file will be uploaded to MEDIA_ROOT/message_images/user_<id>/user_<id>/<filename>
+    return 'message_images/user_%s/user_%s/%s' % (instance.sender.id, instance.recipient.id, filename)
 
 
 @python_2_unicode_compatible
@@ -101,7 +101,7 @@ class Message(models.Model):
         if self.message_type == 'txt':
             return self.sender_content
         elif self.message_type == 'img':
-            return self.image
+            return self.image.name
 
     def translate(self):
         """Translate original content to recipient's language"""

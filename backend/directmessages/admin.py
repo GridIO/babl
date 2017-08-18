@@ -10,7 +10,7 @@ class MessageAdmin(admin.ModelAdmin):
 
     class Meta:
         fields = (
-            'sender', 'recipient', 'sender_content', 'recipient_content',
+            'sender', 'recipient', 'sender_content', 'recipient_content', 'image',
             'sender_language', 'recipient_language', 'sent_at', 'read_at',
         )
 
