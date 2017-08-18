@@ -24,26 +24,30 @@ class Location(models.Model):
             self.timestamp.strftime('%Y-%m-%d %H:%M:%S')
         )
 
-    def get_near(self, offset=0):
+    def get_distance(self, location2):
+        """
+        Get distance between self and a separate location object
+
+        Inputs:
+        - location2:     Location object other user
+
+        Returns: float representing distance between two Location objects
+        """
+        return distance(self.point, location2.point).km
+
+    def get_near(self):
         """
         Get most recent location events within 20 km radius of self.
 
         Inputs:
         - offset (optional): offsets the returned list by 60; 0 by default
 
-        Returns: array with dicts containing two elements:
-        - user:     User object for nearby user
-        - distance: GeoPy Distance object repr how far user is from self
+        Returns: queryset containing matching User objects
         """
-        obj = Location.objects \
+        objects = Location.objects \
             .exclude(user=self.user) \
             .exclude(user__in=self.user.blocked_users.all()) \
             .filter(point__distance_lte=(self.point, D(km=20))) \
             .order_by('user', '-timestamp').distinct('user')
 
-        results = sorted([{
-            'user': i.user,
-            'distance': distance(self.point, i.point)
-        } for i in obj], key=itemgetter('distance'))
-
-        return results[60 * offset: 60 * (offset + 1)]
+        return [obj.user for obj in objects]
