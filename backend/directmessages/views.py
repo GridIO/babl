@@ -9,7 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from directmessages.models import Message
 from directmessages.serializers import MessageGetSerializer
 from directmessages.serializers import MessagePostSerializer
-from directmessages.serializers import UserSerializer
+from core.serializers import UserSerializer
 
 from directmessages.permissions import IsOwnerOrReadOnly
 from rest_framework.permissions import IsAuthenticated
@@ -50,10 +50,14 @@ class ConversationViewSet(mixins.RetrieveModelMixin,
         user = self.request.user
         try:
             counterparty = User.objects.get(id=pk)
+
         except ObjectDoesNotExist:
             raise UserUnavailable
 
-        messages = Inbox.get_conversation(user, counterparty)
+        if counterparty not in user.blocked_users.all():
+            messages = Inbox.get_conversation(user, counterparty)
+        else:
+            raise UserUnavailable
 
         serializer = self.get_serializer(messages, many=True)
         return Response(serializer.data)

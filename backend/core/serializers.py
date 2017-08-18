@@ -1,5 +1,7 @@
-from core.models import User, Language
 from rest_framework import serializers
+
+from location.models import Location
+from core.models import User, Language
 from django.contrib.auth.hashers import make_password
 
 
@@ -20,11 +22,26 @@ class SignUpSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
 
+    distance = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = ('url', 'email', 'display_name', 'about_me', 'age', 'height',
                   'weight', 'ethnicity', 'body_type', 'position', 'rel_status',
-                  'hiv_status', 'hiv_test_date',)
+                  'hiv_status', 'hiv_test_date', 'distance',)
+
+    def get_distance(self, user2):
+
+        user1 = self.context['request'].user
+
+        if user1 != user2:
+            locations = Location.objects.filter(user__in=[user1, user2]) \
+                                .order_by('user', '-timestamp') \
+                                .distinct('user')
+
+            return locations[0].get_distance(locations[1])
+
+        return 0.0
 
 
 class LanguageSerializer(serializers.ModelSerializer):
