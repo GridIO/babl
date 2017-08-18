@@ -112,7 +112,7 @@ class ProfileImageOrder(models.Model):
         self.save()
 
     def get_images(self):
-        return Profile.objects.filter(id__in=self.order)
+        return ProfileImage.objects.filter(id__in=self.order)
 
 
 # Signals
@@ -138,10 +138,16 @@ def user_delete(sender, instance, **kwargs):
 
 
 @receiver(post_save, sender=ProfileImage)
-def profile_image_create(sender, instance, created, **kwargs):
+def profile_image_save(sender, instance, created, **kwargs):
     if created:
         obj, created_pio = _pio_helper_create(user=instance.user)
         obj.add(instance.id)
+    else:
+        # delete object if rejected
+        if instance.status == 'REJ':
+            instance.delete()
+
+        # TODO: send user an email informing them that their profile image was rejected
 
 
 @receiver(post_delete, sender=ProfileImage)
