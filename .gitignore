@@ -3,8 +3,8 @@
 *.DS_Store
 *.db
 *.sqlite3
-profile_images/
-message_images/
+static/
+media/
 
 # compiled output
 /dist

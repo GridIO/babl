@@ -18,4 +18,4 @@ class ProfileImageViewSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = ProfileImage
-        fields = ('url', 'id', 'image',)
+        fields = ('url', 'id', 'image', 'status',)

@@ -5,9 +5,12 @@ from images.models import ProfileImageOrder
 
 class ProfileImageAdmin(admin.ModelAdmin):
 
+    list_display = ('user', 'image', 'status',)
+    list_filter = ('status',)
+
     class Meta:
         model = ProfileImage
-        fields = ('user', 'image',)
+        fields = ('user', 'image', 'status',)
 
 
 class ProfileImageOrderAdmin(admin.ModelAdmin):

@@ -28,10 +28,19 @@ def user_directory_path_profile(instance, filename):
 
 
 class ProfileImage(models.Model):
+
+    STATUS_CHOICES = (
+        ('PEN', 'Pending'),
+        ('APP', 'Approved'),
+        ('REJ', 'Rejected')
+    )
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL)
     image = models.ImageField(upload_to=user_directory_path_profile,
                               storage=OverwriteStorage())
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    status = models.CharField(max_length=3, choices=STATUS_CHOICES,
+                              default='PEN')
 
     class Meta:
         verbose_name = _('Profile Image')
