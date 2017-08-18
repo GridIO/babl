@@ -4,6 +4,7 @@ from location.models import Location
 from core.models import User, Language
 from django.contrib.auth.hashers import make_password
 
+from location.exceptions import LocationUnavailable
 
 class SignUpSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -39,7 +40,10 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
                                 .order_by('user', '-timestamp') \
                                 .distinct('user')
 
-            return locations[0].get_distance(locations[1])
+            try:
+                return locations[0].get_distance(locations[1])
+            except IndexError:
+                raise LocationUnavailable
 
         return 0.0
 
