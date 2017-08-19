@@ -19,6 +19,14 @@ User = get_user_model()
 class LocationViewSet(mixins.ListModelMixin,
                       mixins.CreateModelMixin,
                       viewsets.GenericViewSet):
+    """
+    list:
+    Return a list of Users, ordered by closest to farthest, based on logged in user's most recent location
+
+    create:
+    Create a new Location instance; must contain a Point object in str form
+    e.g. POINT(-73.985588 40.758064) --> Times Square, NYC
+    """
 
     permission_classes = (IsOwnerOrReadOnly, IsAuthenticated,)
     queryset = User.objects.all()

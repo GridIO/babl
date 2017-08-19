@@ -23,6 +23,16 @@ class ConversationViewSet(mixins.RetrieveModelMixin,
                           mixins.ListModelMixin,
                           mixins.CreateModelMixin,
                           viewsets.GenericViewSet):
+    """
+    list:
+    Get list of User objects sorted from nearest to farthest from current user.
+
+    retrieve:
+    Retrieve all messages between current user and another user specified by their pk.
+
+    create:
+    Creates a new message to be sent to another user from current user.
+    """
 
     permission_classes = (IsOwnerOrReadOnly, IsAuthenticated,)
 

@@ -6,7 +6,6 @@ from core.serializers import UserSerializer
 from core.serializers import LanguageSerializer
 
 from core.permissions import IsSelfOrReadOnly
-from core.permissions import IsAdminOrReadOnly
 from core.permissions import IsCreationOrIsAuthenticated
 from rest_framework.permissions import IsAuthenticated
 
@@ -16,7 +15,14 @@ class UserViewSet(mixins.RetrieveModelMixin,
                   mixins.UpdateModelMixin,
                   viewsets.GenericViewSet):
     """
-    API endpoint that allows users to be viewed or edited
+    retrieve:
+    Get the primary information of a user.
+
+    update:
+    Update the primary information of current user.
+
+    create:
+    Create a new user object.
     """
     permission_classes = (IsSelfOrReadOnly, IsCreationOrIsAuthenticated,)
 
@@ -34,7 +40,11 @@ class LanguageViewSet(mixins.RetrieveModelMixin,
                       mixins.ListModelMixin,
                       viewsets.GenericViewSet):
     """
-    API endpoint that allows languages to be viewed as a list
+    list:
+    list all languages available for translation.
+
+    retrieve:
+    retrieve an individual language object.
     """
     permission_classes = (IsAuthenticated,)
 

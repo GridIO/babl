@@ -25,6 +25,19 @@ class ProfileImageViewSet(mixins.RetrieveModelMixin,
                           mixins.CreateModelMixin,
                           mixins.DestroyModelMixin,
                           viewsets.GenericViewSet):
+    """
+    list:
+    List all ProfileImage objects that belong to current user.
+
+    retrieve:
+    List all ProfileImage objects for user with id pk, omits all pending and rejected images.
+
+    create:
+    Create a new ProfileImage object for current user. Automatically assigned 'pending' as status value.
+
+    destroy:
+    Delete an existing ProfileImage object belonging to current user.
+    """
 
     permission_classes = (IsAuthenticated, IsOwnerOrReadOnly,)
 
@@ -47,10 +60,7 @@ class ProfileImageViewSet(mixins.RetrieveModelMixin,
         except ObjectDoesNotExist:
             raise UserUnavailable
 
-        images = ProfileImage.objects.filter(user=user)
-
-        if user != self.request.user:
-            images = images.exclude(status__in=['REJ', 'PEN'])
+        images = ProfileImage.objects.filter(user=user).exclude(status__in=['REJ', 'PEN'])
 
         page = self.paginate_queryset(images)
         if page is not None:
