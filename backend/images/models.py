@@ -37,7 +37,7 @@ class ProfileImage(models.Model):
         ('REJ', 'Rejected')
     )
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, db_index=True)
     image = models.ImageField(upload_to=user_directory_path_profile,
                               storage=OverwriteStorage())
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)

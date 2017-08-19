@@ -42,12 +42,14 @@ class Message(models.Model):
     sender = models.ForeignKey(
         AUTH_USER_MODEL,
         related_name='sent_dm',
-        verbose_name=_("Sender")
+        verbose_name=_("Sender"),
+        db_index=True
     )
     recipient = models.ForeignKey(
         AUTH_USER_MODEL,
         related_name='received_dm',
-        verbose_name=_("Recipient")
+        verbose_name=_("Recipient"),
+        db_index=True
     )
     message_type = models.CharField(
         max_length=3,

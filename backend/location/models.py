@@ -10,7 +10,7 @@ from operator import itemgetter
 
 
 class Location(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, db_index=True)
     point = models.PointField()
     timestamp = models.DateTimeField(auto_now_add=True)
 
