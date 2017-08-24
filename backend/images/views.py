@@ -1,7 +1,11 @@
-from rest_framework import viewsets, mixins
+from django.conf import settings
+from django.views.static import serve
+from django.utils._os import safe_join
+
+from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
 
 from images.models import ProfileImage
 from images.models import ProfileImageOrder
@@ -54,6 +58,12 @@ class ProfileImageViewSet(mixins.RetrieveModelMixin,
         """
         return ProfileImage.objects.filter(user=self.request.user)
 
+    def list(self, request, *args, **kwargs):
+        response = super(ProfileImageViewSet, self).list(self, args, kwargs)
+        response.data['order'] = [item for item in ProfileImageOrder.objects.get(user=request.user).order]
+
+        return response
+
     def retrieve(self, request, pk=None, *args, **kwargs):
         try:
             user = User.objects.get(id=pk)
@@ -77,7 +87,21 @@ class ProfileImageViewSet(mixins.RetrieveModelMixin,
         return response
 
     def destroy(self, request, pk=None, *args, **kwargs):
-        pass
+        if User.objects.get(id=pk) != request.user:
+            return Response({'detail': 'Unauthorized.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        image_id = request.data.get('imageId')
+
+        if not image_id:
+            return Response({'detail': 'Please include imageId in request body.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            image = ProfileImage.objects.get(id=image_id)
+        except ObjectDoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        image.delete()
+        return Response({'detail': 'Image successfully deleted.'}, status=status.HTTP_204_NO_CONTENT)
 
     @detail_route(methods=['put'])
     def move(self, request, pk=None):
@@ -90,3 +114,15 @@ class ProfileImageViewSet(mixins.RetrieveModelMixin,
         pio.move(new_position, profile_image_id)
 
         return self.list(request)
+
+
+@api_view(['GET'])
+@permission_classes((IsAuthenticated,))
+def profile_image_serve(request, user_id, uuid):
+
+    path = 'profile_images/user_%s/%s.jpg' % (user_id, uuid)
+
+    response = serve(request, path, document_root=settings.MEDIA_ROOT)
+    response['X-Accel-Redirect'] = safe_join(settings.MEDIA_ROOT, path)
+
+    return response
