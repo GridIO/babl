@@ -3,7 +3,7 @@
 *.DS_Store
 *.db
 *.sqlite3
-media/
+media_root/
 
 # compiled output
 /dist
