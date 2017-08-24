@@ -1,6 +1,11 @@
+from django.conf import settings
+from django.views.static import serve
+from django.utils._os import safe_join
+from django.http import Http404
+
 from rest_framework import viewsets, mixins
-from rest_framework.decorators import detail_route
 from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
 
 from django.core.exceptions import ObjectDoesNotExist
 from core.exceptions import UserUnavailable
@@ -70,3 +75,21 @@ class ConversationViewSet(mixins.RetrieveModelMixin,
 
         serializer = self.get_serializer(messages, many=True)
         return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes((IsAuthenticated,))
+def message_image_serve(request, user1_id, user2_id, uuid):
+
+    user_id = request.user.id
+
+    if not user_id in (int(user1_id), int(user2_id)):
+        raise Http404
+
+    path = 'message_images/user_%s/user_%s/%s.jpg' % (user1_id, user2_id, uuid)
+
+    response = serve(request, path, document_root=settings.MEDIA_ROOT)
+    response['X-Accel-Redirect'] = safe_join(settings.MEDIA_ROOT, path)
+
+    return response
+
