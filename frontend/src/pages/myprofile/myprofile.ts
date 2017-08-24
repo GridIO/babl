@@ -5,7 +5,7 @@ import { NavController } from 'ionic-angular';
   selector: 'page-myprofile',
   templateUrl: 'myprofile.html'
 })
-export class MyProfile {
+export class MyProfilePage {
 
   constructor(public navCtrl: NavController) {
 
