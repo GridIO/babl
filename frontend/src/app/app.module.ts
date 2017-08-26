@@ -5,7 +5,7 @@ import { MyApp } from './app.component';
 
 import { PeoplePage } from '../pages/people/people';
 import { ChatsPage } from '../pages/chats/chats';
-import { MyProfilePage } from '../pages/myprofile/myprofile';
+import { ProfilePage } from '../pages/profile/profile';
 import { TabsPage } from '../pages/tabs/tabs';
 
 import { StatusBar } from '@ionic-native/status-bar';
@@ -16,7 +16,7 @@ import { SplashScreen } from '@ionic-native/splash-screen';
     MyApp,
     PeoplePage,
     ChatsPage,
-    MyProfilePage,
+    ProfilePage,
     TabsPage
   ],
   imports: [
@@ -28,7 +28,7 @@ import { SplashScreen } from '@ionic-native/splash-screen';
     MyApp,
     PeoplePage,
     ChatsPage,
-    MyProfilePage,
+    ProfilePage,
     TabsPage
   ],
   providers: [
