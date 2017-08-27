@@ -8,6 +8,8 @@ from location.models import Location
 from core.serializers import UserSerializer
 from location.serializers import LocationSerializer
 
+from operator import itemgetter
+
 from location.permissions import IsOwnerOrReadOnly
 from rest_framework.permissions import IsAuthenticated
 
@@ -52,7 +54,12 @@ class LocationViewSet(mixins.ListModelMixin,
         page = self.paginate_queryset(nearby)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+
+            # create response and order people by distance
+            response = self.get_paginated_response(serializer.data)
+            response.data['results'].sort(key=itemgetter('distance'))
+
+            return response
         # end pagination
 
         serializer = self.get_serializer(nearby, many=True)
