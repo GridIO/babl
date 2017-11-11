@@ -30,7 +30,7 @@ router = routers.DefaultRouter()
 router.register(r'users', core_views.UserViewSet)
 router.register(r'languages', core_views.LanguageViewSet)
 router.register(r'profile-images', images_views.ProfileImageViewSet, base_name='profileimage')
-router.register(r'conversations', directmessages_views.ConversationViewSet, base_name='conversation')
+router.register(r'messages', directmessages_views.MessageViewSet, base_name='message')
 router.register(r'locations', locations_views.LocationViewSet, base_name='location')
 
 
