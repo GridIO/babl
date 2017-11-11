@@ -6,14 +6,14 @@ from django.http import Http404
 from rest_framework import viewsets, mixins
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
-
-from django.core.exceptions import ObjectDoesNotExist
-from core.exceptions import UserUnavailable
+from rest_framework.status import HTTP_201_CREATED
 
 from directmessages.models import Message
 from directmessages.serializers import MessageGetSerializer
 from directmessages.serializers import MessagePostSerializer
-from core.serializers import UserSerializer
+
+from directmessages.exceptions import RecipientCantBeSelf
+from directmessages.exceptions import MustHaveRecipient
 
 from directmessages.permissions import IsOwnerOrReadOnly
 from rest_framework.permissions import IsAuthenticated
@@ -24,57 +24,50 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
-class ConversationViewSet(mixins.RetrieveModelMixin,
-                          mixins.ListModelMixin,
-                          mixins.CreateModelMixin,
-                          viewsets.GenericViewSet):
+class MessageViewSet(mixins.ListModelMixin,
+                     mixins.CreateModelMixin,
+                     viewsets.GenericViewSet):
     """
-    list:
-    Get list of User objects sorted from nearest to farthest from current user.
+    GET /messages/?recipient={user_id}:
+    Get all messages between user and recipient; must have recipient
 
-    retrieve:
-    Retrieve all messages between current user and another user specified by their pk.
-
-    create:
-    Creates a new message to be sent to another user from current user.
+    POST /messages/?recipient={user_id}:
+    Send a message from user to recipient; must have recipient
     """
 
     permission_classes = (IsOwnerOrReadOnly, IsAuthenticated,)
+    queryset = Message.objects.all()
 
     def get_serializer_class(self):
-        if self.action == 'list':
-            return UserSerializer
-        if self.action == 'retrieve':
-            return MessageGetSerializer
         if self.action == 'create':
             return MessagePostSerializer
 
-        # return MessageGetSerializer
+        return MessageGetSerializer
 
-    def get_queryset(self):
-        """
+    def list(self, request, *args, **kwargs):
+        recipient = recipient_checker(request)
 
-        """
-        users = [
-            user.id for user in Inbox.get_conversations(self.request.user)
-        ]
-        return User.objects.filter(pk__in=users)
+        queryset = Inbox.get_conversation(request.user, recipient)
 
-    def retrieve(self, request, pk=None, format=None):
-        user = self.request.user
-        try:
-            counterparty = User.objects.get(id=pk)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
 
-        except ObjectDoesNotExist:
-            raise UserUnavailable
-
-        if counterparty not in user.blocked_users.all():
-            messages = Inbox.get_conversation(user, counterparty)
-        else:
-            raise UserUnavailable
-
-        serializer = self.get_serializer(messages, many=True)
+        serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        recipient = recipient_checker(request)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.context['recipient'] = recipient
+        serializer.is_valid(raise_exception=True)
+
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+
+        return Response(serializer.data, status=HTTP_201_CREATED, headers=headers)
 
 
 @api_view(['GET'])
@@ -83,7 +76,7 @@ def message_image_serve(request, user1_id, user2_id, uuid):
 
     user_id = request.user.id
 
-    if not user_id in (int(user1_id), int(user2_id)):
+    if user_id not in (int(user1_id), int(user2_id)):
         raise Http404
 
     path = 'message_images/user_%s/user_%s/%s.jpg' % (user1_id, user2_id, uuid)
@@ -93,3 +86,34 @@ def message_image_serve(request, user1_id, user2_id, uuid):
 
     return response
 
+
+# HELPER FUNCTIONS
+
+def recipient_checker(request):
+    """
+    Check that recipient behaves in expected way
+
+    :param request: HTTP request to be checked
+    :return: returns User object if all checks successful
+    """
+    recipient_id = request.GET.get('recipient')
+
+    # sender and recipient must be specified in url
+    if recipient_id is None:
+        raise MustHaveRecipient
+
+    # sender and recipient can't be the same user
+    if int(recipient_id) == request.user.id:
+        raise RecipientCantBeSelf
+
+    # check if recipient exists, otherwise raise 404
+    try:
+        recipient = User.objects.get(id=recipient_id)
+    except User.DoesNotExist:
+        raise Http404
+
+    # check if the users blocked one another, if so raise 404
+    if recipient_id in request.user.blocked_users.all():
+        raise Http404
+
+    return recipient

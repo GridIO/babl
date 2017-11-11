@@ -1,19 +1,23 @@
 from __future__ import unicode_literals
 
-from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+from django.utils._os import safe_join
 
 from django.utils.encoding import python_2_unicode_compatible
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
-from django.contrib.staticfiles.templatetags.staticfiles import static
 
 from PIL import Image as Img
 from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
 import uuid
 import os
+
+from directmessages.exceptions import RecipientCantBeSelf
+from directmessages.exceptions import ContentMustBeSpecified
+from directmessages.exceptions import ContentCanOnlyBeSingleMedium
+from directmessages.exceptions import ContentMustMatchIndicatedType
 
 from core.models import Language
 from google.cloud import translate
@@ -110,7 +114,7 @@ class Message(models.Model):
 
         # get credentials for google authentication
         credentials = service_account.Credentials.from_service_account_file(
-            settings.BASE_DIR + static('service-credentials.json')
+            safe_join(settings.STATIC_ROOT, 'service-credentials.json')
         )
 
         # initialize client for translations
@@ -129,21 +133,22 @@ class Message(models.Model):
 
     def clean(self):
         if self.sender == self.recipient:
-            raise ValidationError("You can't send messages to yourself")
+            raise RecipientCantBeSelf
 
         # ensure content is uploaded
-        if self.message_type == 'txt' and not self.sender_content:
-            raise ValidationError("You must enter text.")
+        if not self.sender_content and not self.image:
+            raise ContentMustBeSpecified
 
-        if self.message_type == 'img' and not self.image:
-            raise ValidationError("You must upload an image.")
+        # prevent double uploads
+        if self.sender_content and self.image:
+            raise ContentCanOnlyBeSingleMedium
 
-        # prevent content mismatch
-        if self.message_type == 'txt' and self.image:
-            raise ValidationError("You can't upload image to text message.")
+        # ensure that types match
+        if self.sender_content and self.message_type != 'txt':
+            raise ContentMustMatchIndicatedType
 
-        if self.message_type == 'img' and self.sender_content:
-            raise ValidationError("You can't enter text to image message.")
+        if self.image and self.message_type != 'img':
+            raise ContentMustMatchIndicatedType
 
     def save(self, **kwargs):
         self.full_clean()
@@ -161,6 +166,8 @@ class Message(models.Model):
                 self.recipient_translated = self.sender_content
 
         elif self.message_type == 'img' and self.pk is None:
+            self.sender_content = None
+
             img = Img.open(BytesIO(self.image.read()))
 
             if img.mode != 'RGB':

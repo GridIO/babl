@@ -2,9 +2,10 @@ from __future__ import unicode_literals
 
 from .models import Message
 from .signals import message_read, message_sent
-from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db.models import Q
+from django.http import Http404
+from directmessages.exceptions import RecipientCantBeSelf
 
 
 class MessagingService(object):
@@ -24,9 +25,9 @@ class MessagingService(object):
         """
 
         if sender == recipient:
-            raise ValidationError("You can't send messages to yourself.")
+            raise RecipientCantBeSelf
         elif sender in recipient.blocked_users.all():
-            raise PermissionError("You can't send messages to blocked users.")
+            raise Http404
 
         message = Message(
             sender=sender, recipient=recipient, content=str(message)
@@ -113,7 +114,7 @@ class MessagingService(object):
 
         if (user2 in user1.blocked_users.all() or
                 user1 in user2.blocked_users.all()):
-            raise PermissionError("You can't send messages to blocked users.")
+            raise Http404
 
         # Newest message first if it's reversed (index 0)
         if reversed:
