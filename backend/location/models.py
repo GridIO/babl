@@ -29,7 +29,7 @@ class Location(models.Model):
         Get distance between self and a separate location object
 
         Inputs:
-        - location2:     Location object other user
+        - location2: Location object other user
 
         Returns: float representing distance between two Location objects
         """
@@ -39,8 +39,8 @@ class Location(models.Model):
         """
         Get most recent location events within 20 km radius of self.
 
-        Inputs:
-        - offset (optional): offsets the returned list by 60; 0 by default
+        # Inputs:
+        # - offset (optional): offsets the returned list by 60; 0 by default
 
         Returns: queryset containing matching User objects
         """

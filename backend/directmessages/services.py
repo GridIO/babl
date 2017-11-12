@@ -76,6 +76,18 @@ class MessagingService(object):
         except Message.DoesNotExist:
             return ""
 
+    def get_most_recent_message(self, user1, user2):
+        """
+        Get most recent message exchanged between user1 and user2
+
+        :param user1: User
+        :param user2: User
+        :return: Message instance
+        """
+        conversation = self.get_conversation(user1, user2, reversed=True)
+
+        return conversation[0]
+
     # Conversation management
 
     def get_conversations(self, user):
@@ -146,3 +158,14 @@ class MessagingService(object):
             message.read_at = timezone.now()
             message_read.send(sender=message, from_user=message.sender, to=message.recipient)
             message.save()
+
+    def get_date_of_last_contact(self, user1, user2):
+        """
+        Get the datetimestamp of the most recent message sent in conversation
+
+        :param user1: User
+        :param user2: User
+        :return: datetime
+        """
+        return self.get_most_recent_message(user1, user2).sent_at
+
