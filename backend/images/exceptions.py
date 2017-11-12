@@ -17,3 +17,9 @@ class ImageNotAvailable(APIException):
     status_code = 400
     default_detail = "Image being referenced is not available."
     default_code = 'image_not_available'
+
+
+class NextImageCannotBeSelf(APIException):
+    status_code = 400
+    default_detail = "An image's next image cannot be itself."
+    default_code = "next_image_invalid"

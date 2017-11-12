@@ -6,7 +6,7 @@ class ProfileImageCreateSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = ProfileImage
-        fields = ('id', 'image',)
+        fields = ('id', 'url', 'image',)
 
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
@@ -18,4 +18,4 @@ class ProfileImageViewSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = ProfileImage
-        fields = ('id', 'image', 'status',)
+        fields = ('id', 'url', 'image', 'status',)

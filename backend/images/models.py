@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.postgres.fields import ArrayField
 from django.conf import settings
 import os
 from django.db.models import Max
@@ -11,15 +10,18 @@ from images.storage import OverwriteStorage
 from django.utils.translation import ugettext_lazy as _
 import uuid
 
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import pre_save, post_save, post_delete, pre_delete
 from django.dispatch.dispatcher import receiver
 
 from django.core.exceptions import ObjectDoesNotExist
 from images.exceptions import TooManyImages
 from images.exceptions import DuplicateImage
 from images.exceptions import ImageNotAvailable
+from images.exceptions import NextImageCannotBeSelf
 
 from django.contrib.auth import get_user_model
+
+# HELPER FUNCTIONS
 
 User = get_user_model()
 
@@ -27,6 +29,51 @@ User = get_user_model()
 def user_directory_path_profile(instance, filename):
     # file will be uploaded to MEDIA_ROOT/profile_images/user_<id>/<filename>
     return 'profile_images/user_%s/%s' % (instance.user.id, filename)
+
+
+def get_images(image, depth=settings.PROFILE_IMAGE_LIMIT):
+    """
+    Creates list of images ordered using next_image
+
+    :param image: instance of ProfileImage
+    :param depth: depth, must be <= settings.PROFILE_IMAGE_LIMIT
+    :return: list of images ordered according to their order
+    """
+    images = []
+
+    def recurse(_image, _depth):
+
+        # add image to the parent list
+        images.append(_image)
+
+        # if desired recursive depth is reached or the next image is null
+        if _depth == 0 or not _image.next_image:
+            return None
+
+        else:
+            recurse(_image.next_image, _depth-1)
+
+    recurse(image, depth)
+
+    return images
+
+
+def get_last_2(images_list):
+    """
+    Retrieve last two images from a list and returns a tuple.
+    If list passed has the settings.PROFILE_IMAGE_LIMIT number of elements,
+    then return the last element and None in a tuple.
+
+    :param images_list: a list of ProfileImage instances ordered accordingly
+    :return: tuple containing either two ProfileImage instances or one instance + None
+    """
+    if len(images_list) < settings.PROFILE_IMAGE_LIMIT:
+        return images_list[-2:]
+
+    return [images_list[-1], None]
+
+
+# MODELS
 
 
 class ProfileImage(models.Model):
@@ -37,26 +84,32 @@ class ProfileImage(models.Model):
         ('REJ', 'Rejected')
     )
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, db_index=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, db_index=True, related_name='images',
+                             verbose_name=_('User'))
     image = models.ImageField(upload_to=user_directory_path_profile,
-                              storage=OverwriteStorage())
+                              storage=OverwriteStorage(), verbose_name=_('Image File'))
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     status = models.CharField(max_length=3, choices=STATUS_CHOICES,
-                              default='PEN')
+                              default='PEN', verbose_name=_('Status'))
+    primary = models.BooleanField(default=False, verbose_name=_('Primary Image'))
+    next_image = models.ForeignKey("self", blank=True, null=True, on_delete=models.SET_NULL,
+                                   verbose_name=_('Next Image'))
 
     class Meta:
         verbose_name = _('Profile Image')
         verbose_name_plural = _('Profile Images')
 
     def __str__(self):
-        return '%s' % self.user
+        return str(self.image)
 
     def save(self, *args, **kwargs):
-        # check that user doesn't have 6 profile_images, raise error otherwise
-        profile_imgs = ProfileImage.objects.filter(user=self.user)
-
-        if len(profile_imgs) >= 6:
+        # check that user doesn't have allowed number of profile_images, raise error otherwise
+        if len(ProfileImage.objects.filter(user=self.user)) > settings.PROFILE_IMAGE_LIMIT:
             raise TooManyImages
+
+        # check that next image is not self
+        if self.next_image == self:
+            raise NextImageCannotBeSelf
 
         # compress image before saving
         if self.image and self.pk is None:
@@ -73,77 +126,169 @@ class ProfileImage(models.Model):
 
             img.save(output, format='JPEG', quality=25)
             self.image = InMemoryUploadedFile(
-                output, 'ImageField', "%s.jpg" % (self.uuid),
+                output, 'ImageField', "%s.jpg" % self.uuid,
                 'image/jpeg', output.seek(0, os.SEEK_END), None
             )
 
         # save
         super(ProfileImage, self).save()
 
+    def move(self, index, *args, **kwargs):
+        """
+        Move image to index within user profile images.
 
-class ProfileImageOrder(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL)
-    order = ArrayField(
-        models.IntegerField(null=True, blank=True),
-        size=6,
-        default=[],
-        blank=True
-    )
+        Added per issue #18.
 
-    def __str__(self):
-        return '%s' % self.user
+        :param index: define location for move, must be integer
+        :return: None
 
-    def add(self, profile_image_id):
-        if profile_image_id in self.order:
-            raise DuplicateImage
+        Glossary:
+        - pre_operation_primary = the image that is the primary for user before any operations are performed
+        - pre_operation_previous = the image preceding self before any operations are performed
+        - pre_operation_next = the image that comes after self before any operations are performed
+        - post_operation_previous = the image preceding self after desired operations are performed
+        - post_operation_next = the image that comes after self after any desired operations are performed
+        """
+        if len(ProfileImage.objects.filter(user=self.user)) < 2:
+            return self  # do nothing, since there's nowhere else to move
 
-        self.order.append(profile_image_id)
-        self.save()
+        if index == 0:
+            if self.primary:
 
-    def move(self, new_position, profile_image_id):
-        try:
-            self.order.remove(profile_image_id)
-        except ValueError:
-            raise ImageNotAvailable
+                print('index 0, primary true')
 
-        self.order.insert(new_position, profile_image_id)
-        self.save()
+                return self  # do nothing, since this would move it to the same place
 
-    def drop(self, profile_image_id):
-        self.order.remove(profile_image_id)
-        self.save()
+            else:
 
-    def get_images(self):
-        return ProfileImage.objects.filter(id__in=self.order)
+                print('index 0, primary false')
+
+                # Find `pre_operation_previous`
+                pre_operation_previous = ProfileImage.objects.get(next_image=self)
+
+                # Find `pre_operation_next`
+                pre_operation_next = self.next_image
+
+                # Make `pre_operation_previous.next_image = pre_operation_next`
+                pre_operation_previous.next_image = pre_operation_next
+
+                # Done with `pre_operation_previous` -- save
+                pre_operation_previous.save()
+
+                # Find `pre_operation_primary`
+                pre_operation_primary = ProfileImage.objects.get(primary=True, user=self.user)
+
+                # Make `pre_operation_primary.primary = False`
+                pre_operation_primary.primary = False
+
+                # Make `self.primary = True`
+                self.primary = True
+
+                # Make `self.next_image = pre_operation_primary`
+                self.next_image = pre_operation_primary
+
+                # Done with `self` and `pre_operation_primary` -- save both
+                pre_operation_primary.save()
+                self.save()
+
+                return self
+
+        else:
+            if self.primary:
+
+                print('index >0, primary true')
+
+                # Find `pre_operation_next`
+                pre_operation_next = self.next_image
+
+                # Make `self.primary = False`
+                self.primary = False
+
+                # Make `pre_operation_next.primary = True`
+                pre_operation_next.primary = True
+
+                # Done with `pre_operation_next` -- save
+                pre_operation_next.save()
+
+                # Need to update db with current self -- save
+                self.save()
+
+                # Get last two images through to index+1 as `post_operation_previous`
+                # and `post_operation_next`, respectively
+                image_list = get_images(
+                    ProfileImage.objects.get(primary=True, user=self.user),
+                    depth=index
+                )
+                post_operation_previous, post_operation_next = get_last_2(image_list)
+
+                # Make `post_operation_previous.next_image = self`
+                post_operation_previous.next_image = self
+
+                # Make `self.next_image = post_operation_next`
+                self.next_image = post_operation_next
+
+                # Done with `self` and `post_operation_previous` -- save both
+                post_operation_previous.save()
+                self.save()
+
+                return self
+
+            else:
+
+                print('index >0, primary false')
+
+                # Find `pre_operation_previous`
+                pre_operation_previous = ProfileImage.objects.get(next_image=self)
+
+                # Find `pre_operation_next`
+                pre_operation_next = self.next_image
+
+                # Make `pre_operation_previous.next_image = pre_operation_next`
+                pre_operation_previous.next_image = pre_operation_next
+
+                # Done with `pre_operation_previous` -- save
+                pre_operation_previous.save()
+
+                # Get last two images through to index+1 as `post_operation_previous`
+                # and `post_operation_next`, respectively
+                image_list = get_images(
+                    ProfileImage.objects.get(primary=True, user=self.user),
+                    depth=index
+                )
+                post_operation_previous, post_operation_next = get_last_2(image_list)
+
+                # Make `post_operation_previous.next_image = self`
+                post_operation_previous.next_image = self
+
+                # Make `self.next_image = post_operation_next`
+                self.next_image = post_operation_next
+
+                # Done with `self` and `post_operation_previous` -- save both
+                post_operation_previous.save()
+                self.save()
+
+                return self
 
 
-# Signals
-
-def _pio_helper_create(**kwargs):
-    return ProfileImageOrder.objects.get_or_create(**kwargs)
-
-
-def _pio_helper_get(**kwargs):
-    return ProfileImageOrder.objects.get(**kwargs)
-
-
-@receiver(post_save, sender=User)
-def user_create(sender, instance, created, **kwargs):
-    if created:
-        obj, created_pio = _pio_helper_create(user=instance)
-
-
-@receiver(post_delete, sender=User)
-def user_delete(sender, instance, **kwargs):
-    obj, created_pio = _pio_helper_get(user=instance)
-    obj.delete()
-
+# SIGNALS
 
 @receiver(post_save, sender=ProfileImage)
-def profile_image_save(sender, instance, created, **kwargs):
+def profile_image_post_save(sender, instance, created, **kwargs):
+    """
+    Updated per issue #18
+    """
     if created:
-        obj, created_pio = _pio_helper_create(user=instance.user)
-        obj.add(instance.id)
+        images = sender.objects.filter(user=instance.user).exclude(id=instance.id)
+
+        if len(images) == 0:
+            instance.primary = True
+            instance.save()
+
+        else:
+            previous = images.get(next_image__isnull=True)
+            previous.next_image = instance
+            previous.save()
+
     else:
         # delete object if rejected
         if instance.status == 'REJ':
@@ -152,12 +297,32 @@ def profile_image_save(sender, instance, created, **kwargs):
         # TODO: send user an email informing them that their profile image was rejected
 
 
+@receiver(pre_delete, sender=ProfileImage)
+def profile_image_pre_delete(sender, instance, **kwargs):
+    """
+    Created per issue #18
+    """
+    if instance.primary:
+        next_img = instance.next_image
+        next_img.primary = True
+        next_img.save()
+
+    else:
+        if instance.next_image:
+            next_img = instance.next_image
+            previous = ProfileImage.objects.get(next_image=instance)
+            previous.next_image = next_img
+            previous.save()
+
+        else:
+            pass  # nothing needs to be done
+
+
 @receiver(post_delete, sender=ProfileImage)
-def profile_image_delete(sender, instance, **kwargs):
+def profile_image_post_delete(sender, instance, **kwargs):
+    """
+    Updated per issue #18
+    """
     # delete actual image file
     instance.image.delete(False)
-
-    # drop image from the order element
-    obj = _pio_helper_get(user=instance.user)
-    obj.drop(instance.id)
 
