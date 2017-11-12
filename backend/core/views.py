@@ -1,5 +1,5 @@
 from rest_framework import viewsets, mixins
-from rest_framework.decorators import detail_route
+from rest_framework.decorators import list_route
 from rest_framework.response import Response
 
 from django.http import Http404
@@ -32,11 +32,11 @@ class UserViewSet(mixins.RetrieveModelMixin,
     PATCH /users/{pk}/:
     Update the primary information of user with id {pk}.
 
-    GET /users/{pk}/closest/:
-    Get the users closest to user with id {pk} ordered from closest to farthest.
+    GET /users/closest/:
+    Get the users closest to current user ordered from closest to farthest.
 
-    GET /users/{pk}/conversations/:
-    Get all the conversations that the user with id {pk} has ordered from most to least recent.
+    GET /users/conversations/:
+    Get all the conversations that the current user has ordered from most to least recent.
     """
     permission_classes = (IsSelfOrReadOnly, IsCreationOrIsAuthenticated,)
 
@@ -49,15 +49,11 @@ class UserViewSet(mixins.RetrieveModelMixin,
         else:
             return UserSerializer
 
-    @detail_route(methods=['get'])
-    def closest(self, request, pk=None):
-
-        # check to ensure that epicenter belongs to current user
-        if int(pk) != request.user.id:
-            raise Http404
+    @list_route(methods=['get'])
+    def closest(self, request):
 
         try:
-            location = Location.objects.filter(user=pk).latest('timestamp')
+            location = Location.objects.filter(user=request.user.id).latest('timestamp')
             queryset = location.get_near()
         except Location.DoesNotExist:
             raise LocationUnavailable
@@ -70,14 +66,10 @@ class UserViewSet(mixins.RetrieveModelMixin,
         serializer = self.get_serializer(queryset, many=True)
         return Response(sorted(serializer.data, key=lambda k: k['distance']))
 
-    @detail_route(methods=['get'])
-    def conversations(self, request, pk=None):
+    @list_route(methods=['get'])
+    def conversations(self, request):
 
-        # check to ensure that conversations belong to current user
-        if int(pk) != request.user.id:
-            raise Http404
-
-        conversations = Inbox.get_conversations(User.objects.get(id=pk))
+        conversations = Inbox.get_conversations(User.objects.get(id=request.user.id))
 
         page = self.paginate_queryset(conversations)
         if page is not None:
@@ -88,6 +80,7 @@ class UserViewSet(mixins.RetrieveModelMixin,
 
         serializer = self.get_serializer(conversations, many=True)
         return Response(sorted(serializer.data, key=lambda k: k['date_of_last_contact'], reverse=True))
+
 
 
 class LanguageViewSet(mixins.RetrieveModelMixin,
