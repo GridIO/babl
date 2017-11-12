@@ -165,3 +165,7 @@ CORS_ORIGIN_ALLOW_ALL = True  # set to False if in prod
 # CORS_ORIGIN_WHITELIST = (
 #     'localhost:8100',
 # )
+
+# Miscellaneous settings
+
+PROFILE_IMAGE_LIMIT = 6
