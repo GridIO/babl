@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from location.models import Location
 from images.models import ProfileImage
+from images.models import get_images
 from images.serializers import ProfileImageViewSerializer
 
 from core.models import User, Language
@@ -27,22 +28,19 @@ class SignUpSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
 
+    images = serializers.SerializerMethodField()
     distance = serializers.SerializerMethodField()
     most_recent_message = serializers.SerializerMethodField()
     date_of_last_contact = serializers.SerializerMethodField()
-
-    # images = ProfileImageViewSerializer(many=True, read_only=True)
-    # images = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ('url', 'email', 'display_name', 'about_me', 'age', 'height',
                   'weight', 'ethnicity', 'body_type', 'position', 'rel_status',
-                  'hiv_status', 'hiv_test_date', 'distance', 'most_recent_message',
-                  'date_of_last_contact',)# 'images')
+                  'hiv_status', 'hiv_test_date', 'images', 'distance',
+                  'most_recent_message', 'date_of_last_contact',)
 
     def get_distance(self, user2, *args, **kwargs):
-
         user1 = self.context['request'].user
 
         if user1 != user2:
@@ -58,7 +56,6 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         return 0.0
 
     def get_most_recent_message(self, user2, *args, **kwargs):
-
         user1 = self.context['request'].user
 
         try:
@@ -77,7 +74,6 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         return message_sample
 
     def get_date_of_last_contact(self, user2, *args, **kwargs):
-
         user1 = self.context['request'].user
 
         try:
@@ -85,16 +81,20 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         except IndexError:
             return None
 
-    # def get_images(self, user, *args):
-    #     order = ProfileImageOrder.objects.get(user=user).order
-    #
-    #     images = ProfileImage.objects.filter(id__in=order)
-    #
-    #     images = ProfileImageViewSerializer(images, many=True, read_only=True)
-    #
-    #     print(images)
-    #
-    #     return images.data
+    def get_images(self, user, *args, **kwargs):
+        try:
+            primary = ProfileImage.objects.get(user=user, primary=True)
+        except ProfileImage.DoesNotExist:
+            return []
+
+        images = [
+            img for img in get_images(primary)
+            if img.status != 'PEN'
+            or (img.status == 'PEN' and user == self.context['request'].user)
+        ]
+
+        return ProfileImageViewSerializer(images, many=True, context={'request': self.context['request']}).data
+
 
 
 class LanguageSerializer(serializers.ModelSerializer):

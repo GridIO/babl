@@ -52,6 +52,7 @@ class UserViewSet(mixins.RetrieveModelMixin,
     @detail_route(methods=['get'])
     def closest(self, request, pk=None):
 
+        # check to ensure that epicenter belongs to current user
         if int(pk) != request.user.id:
             raise Http404
 
