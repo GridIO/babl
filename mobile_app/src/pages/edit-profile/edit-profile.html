@@ -1,0 +1,103 @@
+<ion-header>
+
+  <ion-navbar>
+    <ion-title>Edit Profile</ion-title>
+  </ion-navbar>
+
+</ion-header>
+
+
+<ion-content padding>
+
+  <form (ngSubmit)="save()">
+
+    <ion-list>
+      <ion-item>
+        <ion-label class="profile-about-me" stacked>About Me</ion-label>
+        <ion-textarea name="about_me" [(ngModel)]="profile.about_me"></ion-textarea>
+      </ion-item>
+      <ion-item>
+        <ion-label class="profile-label">Display Name</ion-label>
+        <ion-input text-right name="display-name" [(ngModel)]="profile.display_name"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-label class="profile-label">Age</ion-label>
+        <ion-input text-right name="age" [(ngModel)]="profile.age"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-label class="profile-label">Height</ion-label>
+        <ion-input text-right name="height" [(ngModel)]="profile.height"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-label class="profile-label">Weight</ion-label>
+        <ion-input text-right name="weight" [(ngModel)]="profile.weight"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-label class="profile-label">Ethnicity</ion-label>
+        <ion-select text-right name="ethnicity" [(ngModel)]="profile.ethnicity" [placeholder]="profile.ethnicity">
+          <ion-option value='AS'>Asian</ion-option>
+          <ion-option value='BL'>Black</ion-option>
+          <ion-option value='LA'>Latino</ion-option>
+          <ion-option value='ME'>Middle Eastern</ion-option>
+          <ion-option value='MI'>Mixed</ion-option>
+          <ion-option value='NA'>Native American</ion-option>
+          <ion-option value='WH'>White</ion-option>
+          <ion-option value='SA'>South Asian</ion-option>
+          <ion-option value='OT'>Other</ion-option>
+        </ion-select>
+      </ion-item>
+      <ion-item>
+        <ion-label class="profile-label">Body Type</ion-label>
+        <ion-select text-right name="body_type" [(ngModel)]="profile.body_type" [placeholder]="profile.body_type">
+          <ion-option value='TO'>Toned</ion-option>
+          <ion-option value='AV'>Average</ion-option>
+          <ion-option value='LA'>Large</ion-option>
+          <ion-option value='MU'>Muscular</ion-option>
+          <ion-option value='SL'>Slim</ion-option>
+          <ion-option value='ST'>Stocky</ion-option>
+        </ion-select>
+      </ion-item>
+      <ion-item>
+        <ion-label class="profile-label">Position</ion-label>
+        <ion-select text-right name="position" [(ngModel)]="profile.position" [placeholder]="profile.position">
+          <ion-option value='TO'>Top</ion-option>
+          <ion-option value='VT'>Vers Top</ion-option>
+          <ion-option value='VS'>Versatile</ion-option>
+          <ion-option value='VB'>Vers Bottom</ion-option>
+          <ion-option value='BO'>Bottom</ion-option>
+        </ion-select>
+      </ion-item>
+      <ion-item>
+        <ion-label class="profile-label">Relationship Status</ion-label>
+        <ion-select text-right name="rel_status" [(ngModel)]="profile.rel_status" [placeholder]="profile.rel_status">
+          <ion-option value='CO'>Committed</ion-option>
+          <ion-option value='DA'>Dating</ion-option>
+          <ion-option value='EN'>Engaged</ion-option>
+          <ion-option value='EX'>Exclusive</ion-option>
+          <ion-option value='MA'>Married</ion-option>
+          <ion-option value='OR'>Open Relationship</ion-option>
+          <ion-option value='PA'>Partnered</ion-option>
+          <ion-option value='SI'>Single</ion-option>
+        </ion-select>
+      </ion-item>
+      <ion-item>
+        <ion-label class="profile-label">HIV Status</ion-label>
+        <ion-select text-right name="hiv_status" [(ngModel)]="profile.hiv_status" [placeholder]="profile.hiv_status">
+          <ion-option value='NE'>Negative</ion-option>
+          <ion-option value='NP'>Negative, on PrEP</ion-option>
+          <ion-option value='PO'>Positive</ion-option>
+          <ion-option value='PU'>Positive, Undetectable</ion-option>
+        </ion-select>
+      </ion-item>
+      <ion-item>
+        <ion-label class="profile-label">HIV Test Date</ion-label>
+        <ion-datetime text-right name="hiv_test_date" displayFormat="MMM, YYYY" [(ngModel)]="profile.hiv_test_date"></ion-datetime>
+      </ion-item>
+    </ion-list>
+
+    <button ion-button type="submit" block>Save</button>
+
+
+  </form>
+
+</ion-content>

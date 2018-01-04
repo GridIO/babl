@@ -1,0 +1,58 @@
+<ion-header>
+  <ion-navbar>
+    <ion-title>
+      Conversation with {{ profile.display_name }}
+    </ion-title>
+    <ion-buttons end>
+      <button (click)="test()">
+        <ion-icon class="more-button" name="more"></ion-icon>
+      </button>
+    </ion-buttons>
+  </ion-navbar>
+</ion-header>
+
+
+<ion-content>
+
+  <ion-infinite-scroll (ionInfinite)="doInfinite($event)">
+    <ion-infinite-scroll-content
+      loadingSpinner="crescent"
+      loadingText="Fetching more messages...">
+    </ion-infinite-scroll-content>
+  </ion-infinite-scroll>
+
+  <ion-grid>
+
+    <ion-row *ngFor="let msg of messages" [ngClass]="{'content-right': profile.id !== msg.sender}">
+
+      <!--Deal with images-->
+      <ion-col class="talk-bubble tri-right btm-left" col-7 *ngIf="profile.id === msg.sender && msg.image">
+        <img src="{{ msg.image }}">
+      </ion-col>
+      <ion-col class="talk-bubble tri-right btm-right" col-7 *ngIf="profile.id !== msg.sender && msg.image">
+        <img src="{{ msg.image }}">
+      </ion-col>
+
+      <!--Deal with text messages-->
+      <ion-col class="talk-bubble tri-right btm-left" col-7 *ngIf="profile.id === msg.sender && !msg.image">
+        <div class="talktext" [innerHtml]="msg.recipient_content"></div>
+      </ion-col>
+
+      <ion-col class="talk-bubble tri-right btm-right" col-7 *ngIf="profile.id !== msg.sender && !msg.image">
+        <div class="talktext" [ngClass]="{'text-right': profile.id !== msg.sender}" [innerHtml]="msg.sender_content"></div>
+      </ion-col>
+
+    </ion-row>
+
+  </ion-grid>
+</ion-content>
+
+<ion-footer keyboard-attach class="bar-stable item-input-inset">
+  <ion-grid full class="text-input-area">
+    <ion-row>
+      <ion-col ion-button outline col-1 (click)="attachImage()"><ion-icon name="camera"></ion-icon></ion-col>
+      <ion-textarea ion-col col-10 placeholder="Begin typing message..." clearInput [(ngModel)]="newMessage.sender_content" name="sender-content"></ion-textarea>
+      <ion-col ion-button col-1 type="submit" (click)="sendMessage()"><ion-icon name="send"></ion-icon></ion-col>
+    </ion-row>
+  </ion-grid>
+</ion-footer>

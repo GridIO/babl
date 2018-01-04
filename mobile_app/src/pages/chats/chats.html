@@ -1,0 +1,32 @@
+<ion-header>
+  <ion-navbar>
+    <ion-title>
+      My Chats
+    </ion-title>
+  </ion-navbar>
+</ion-header>
+
+<ion-content>
+
+  <ion-refresher (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content
+      pullingIcon="arrow-dropdown"
+      pullingText="Pull to refresh"
+      refreshingSpinner="crescent"
+      refreshingText="Updating conversations..."
+    ></ion-refresher-content>
+  </ion-refresher>
+
+  <ion-list>
+    <button ion-item *ngFor="let conv of conversations" (click)="goToMessages(conv)">
+      <ion-thumbnail item-start>
+        <img src="{{ conv.images.length > 0 ? conv.images[0].image : 'assets/img/profile.png'}}">
+      </ion-thumbnail>
+      <h2>{{ conv.display_name }}</h2>
+      <p>{{ conv.most_recent_message }}</p>
+    </button>
+  </ion-list>
+
+
+</ion-content>
+

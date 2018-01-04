@@ -1,0 +1,33 @@
+<ion-header>
+  <ion-navbar>
+    <ion-title>
+      Babl
+    </ion-title>
+  </ion-navbar>
+</ion-header>
+
+<ion-content>
+
+  <ion-refresher (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content
+      pullingIcon="arrow-dropdown"
+      pullingText="Pull to refresh"
+      refreshingSpinner="crescent"
+      refreshingText="Fetching nearby guys..."
+    ></ion-refresher-content>
+  </ion-refresher>
+
+  <ion-grid>
+    <ion-row *ngFor="let row of rowNum">
+      <ion-col class="person-row" col-4 *ngFor="let person of grid[row]" (click)="goToProfile(person)">
+
+        <ion-thumbnail item-start>
+          <img src="{{ person.images.length > 0 ? person.images[0].image : 'assets/img/profile.png'}}">
+        </ion-thumbnail>
+        <div class="display-name">{{ person.display_name }}</div>
+
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+</ion-content>
