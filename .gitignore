@@ -2,6 +2,8 @@
 *.pyc
 *.DS_Store
 *.db
+*.sqlite3
+media_root/
 
 # compiled output
 /dist

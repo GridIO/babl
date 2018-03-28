@@ -1,0 +1,11 @@
+page-chats {
+  ion-thumbnail {
+    position: relative;
+    overflow: hidden;
+  }
+
+  ion-thumbnail img {
+    object-fit: cover;
+  }
+
+}

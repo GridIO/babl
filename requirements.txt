@@ -1,0 +1,13 @@
+django==1.11.4
+coverage==3.7.1
+django-coverage==1.2.4
+djangorestframework==3.6.3
+markdown==2.6.9
+django-filter==1.0.4
+psycopg==2.7.3
+pillow==4.2.1
+geopy==1.11.0
+google==1.9.3
+setuptools==36.2.7
+google-cloud==0.27.0
+django-cors-headers-2.1.0

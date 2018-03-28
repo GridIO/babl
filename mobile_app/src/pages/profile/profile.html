@@ -1,0 +1,94 @@
+<ion-header>
+  <ion-navbar>
+    <ion-title>
+      <span *ngIf="isCurrentUser">My Profile</span>
+      <span *ngIf="isCurrentUser === false">{{ profile?.display_name }}'s Profile</span>
+    </ion-title>
+
+    <ion-buttons *ngIf="isCurrentUser" end>
+      <button (click)="goToSettings(profile)">
+        <ion-icon class="more-button" name="settings"></ion-icon>
+      </button>
+    </ion-buttons>
+
+    <ion-buttons *ngIf="isCurrentUser === false" end>
+      <button (click)="test()">
+        <ion-icon class="more-button" name="more"></ion-icon>
+      </button>
+    </ion-buttons>
+  </ion-navbar>
+</ion-header>
+
+<ion-content padding>
+
+  <ion-card>
+
+    <ion-slides *ngIf="profile?.images.length > 0" pager>
+      <ion-slide *ngFor="let image of profile.images">
+        <img class="avatar" [src]="image.image">
+      </ion-slide>
+    </ion-slides>
+
+    <img *ngIf="profile?.images.length === 0" src='assets/img/profile.png'>
+
+    <ion-list>
+      <ion-item class="profile-label">
+        {{ profile?.display_name }}<span *ngIf="profile?.age">, {{ profile?.age }}</span>
+      </ion-item>
+      <ion-item *ngIf="isCurrentUser === false">
+        <ion-icon name="pin"></ion-icon> {{ profile?.distance | number : "1.0-2" }} km away
+      </ion-item>
+
+      <button class="edit-profile" *ngIf="isCurrentUser" ion-item (click)="editProfile(profile)" detail-none><ion-icon name="create-outline"></ion-icon> Edit Profile</button>
+      <button class="send-message" *ngIf="isCurrentUser === false" ion-item color="light" (click)="goToMessages(profile)" detail-none><ion-icon name="send"></ion-icon> Send Message</button>
+
+    </ion-list>
+
+  </ion-card>
+
+  <ion-card *ngIf="profile?.about_me || profile?.height || profile?.weight || profile?.ethnicity || profile?.body_type ||
+    profile?.position || profile?.rel_status || (profile?.hiv_status && profile?.hiv_test_date)">
+
+    <ion-card-header>
+      Profile Details
+    </ion-card-header>
+
+    <ion-card-content>
+      <ion-grid>
+        <ion-row *ngIf="profile?.about_me">
+          <ion-col class="profile-about-me">{{ profile.about_me }}</ion-col>
+        </ion-row>
+        <ion-row *ngIf="profile?.height">
+          <ion-col class="profile-label" col-6>Height</ion-col>
+          <ion-col col-6>{{ profile?.height }} cm</ion-col>
+        </ion-row>
+        <ion-row *ngIf="profile?.weight">
+          <ion-col class="profile-label" col-6>Weight</ion-col>
+          <ion-col col-6>{{ profile?.weight }} kg</ion-col>
+        </ion-row>
+        <ion-row *ngIf="profile?.ethnicity">
+          <ion-col class="profile-label" col-6>Ethnicity</ion-col>
+          <ion-col col-6>{{ attributes['ETHNICITY'][profile?.ethnicity] }}</ion-col>
+        </ion-row>
+        <ion-row *ngIf="profile?.body_type">
+          <ion-col class="profile-label" col-6>Body Type</ion-col>
+          <ion-col col-6>{{ attributes['BODY_TYPE'][profile?.body_type] }}</ion-col>
+        </ion-row>
+        <ion-row *ngIf="profile?.position">
+          <ion-col class="profile-label" col-6>Position</ion-col>
+          <ion-col col-6>{{ attributes['POSITION'][profile?.position] }}</ion-col>
+        </ion-row>
+        <ion-row *ngIf="profile?.rel_status">
+          <ion-col class="profile-label" col-6>Relationship Status</ion-col>
+          <ion-col col-6>{{ attributes['REL_STATUS'][profile?.rel_status] }}</ion-col>
+        </ion-row>
+        <ion-row *ngIf="profile?.hiv_status && profile?.hiv_test_date">
+          <ion-col class="profile-label" col-6>HIV Status</ion-col>
+          <ion-col col-6>{{ attributes['HIV_STATUS'][profile?.hiv_status] }} as of {{ profile?.hiv_test_date | date: "MMM yyyy" }}</ion-col>
+        </ion-row>
+      </ion-grid>
+    </ion-card-content>
+
+  </ion-card>
+
+</ion-content>

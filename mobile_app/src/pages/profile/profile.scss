@@ -1,0 +1,36 @@
+page-profile {
+
+  .profile-about-me {
+    font-style: italic;
+  }
+
+  .profile-label {
+    font-weight: bold;
+  }
+
+  .ion-slide {
+    width: 100%;
+  }
+
+  .avatar {
+    position: relative;
+    margin: auto;
+    width: 100%;
+    object-fit: cover;
+    overflow: hidden;
+  }
+
+  ion-buttons button {
+    background-color: transparent;
+  }
+
+  ion-icon.more-button {
+    font-size: 2.5em;
+  }
+
+  button.edit-profile {
+    background-color: #488aff;
+    color: #ffffff;
+  }
+
+}
